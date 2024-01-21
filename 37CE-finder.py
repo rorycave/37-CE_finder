@@ -1,0 +1,121 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "c61af485-a2ad-416d-8263-4b386cbf92b0",
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "from Bio import SeqIO\n",
+    "import csv\n",
+    "\n",
+    "def find_sequence_positions(sequence, target):\n",
+    "    positions = []\n",
+    "    index = sequence.find(target)\n",
+    "    while index != -1:\n",
+    "        positions.append(index)\n",
+    "        index = sequence.find(target, index + 1)\n",
+    "    return positions\n",
+    "\n",
+    "def find_distances(core_positions, ce_positions):\n",
+    "    distances = []\n",
+    "    for core_pos in core_positions:\n",
+    "        for ce_pos in ce_positions:\n",
+    "            distances.append(abs(core_pos - ce_pos))\n",
+    "    return distances\n",
+    "\n",
+    "def process_sequence(record, core_sequence, ce_sequence):\n",
+    "    forward_core_positions = find_sequence_positions(record.seq, core_sequence)\n",
+    "    reverse_core_positions = find_sequence_positions(record.seq.reverse_complement(), core_sequence)\n",
+    "\n",
+    "    forward_ce_positions = find_sequence_positions(record.seq, ce_sequence)\n",
+    "    reverse_ce_positions = find_sequence_positions(record.seq.reverse_complement(), ce_sequence)\n",
+    "\n",
+    "    distances = find_distances(forward_core_positions, forward_ce_positions) + find_distances(reverse_core_positions, reverse_ce_positions)\n",
+    "\n",
+    "    return forward_core_positions, reverse_core_positions, forward_ce_positions, reverse_ce_positions, distances\n",
+    "\n",
+    "def main(input_file, core_sequence, ce_sequence, output_file):\n",
+    "    with open(output_file, 'w', newline='') as csvfile:\n",
+    "        fieldnames = ['contig_name', 'core_sequence_orientation', 'core_sequence_start_position', 'core_sequence_end_position',\n",
+    "                      '37CE_sequence_orientation', '37CE_start_position', '37CE_end_position', 'distance']\n",
+    "        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)\n",
+    "        writer.writeheader()\n",
+    "\n",
+    "        for record in SeqIO.parse(input_file, 'fasta'):\n",
+    "            forward_core, reverse_core, forward_ce, reverse_ce, distances = process_sequence(record, core_sequence, ce_sequence)\n",
+    "\n",
+    "            for core_pos in forward_core:\n",
+    "                for ce_pos in forward_ce:\n",
+    "                    writer.writerow({'contig_name': record.id,\n",
+    "                                     'core_sequence_orientation': 'forward',\n",
+    "                                     'core_sequence_start_position': core_pos,\n",
+    "                                     'core_sequence_end_position': core_pos + len(core_sequence),\n",
+    "                                     '37CE_sequence_orientation': 'forward',\n",
+    "                                     '37CE_start_position': ce_pos,\n",
+    "                                     '37CE_end_position': ce_pos + len(ce_sequence),\n",
+    "                                     'distance': abs(core_pos - ce_pos)})\n",
+    "\n",
+    "            for core_pos in reverse_core:\n",
+    "                for ce_pos in reverse_ce:\n",
+    "                    writer.writerow({'contig_name': record.id,\n",
+    "                                     'core_sequence_orientation': 'reverse',\n",
+    "                                     'core_sequence_start_position': core_pos,\n",
+    "                                     'core_sequence_end_position': core_pos + len(core_sequence),\n",
+    "                                     '37CE_sequence_orientation': 'reverse',\n",
+    "                                     '37CE_start_position': ce_pos,\n",
+    "                                     '37CE_end_position': ce_pos + len(ce_sequence),\n",
+    "                                     'distance': abs(core_pos - ce_pos)})\n",
+    "\n",
+    "if __name__ == \"__main__\":\n",
+    "    input_file = \"/Users/rorycave/23F_inter.fasta.txt\"\n",
+    "    core_sequence = \"ttaccgtaaaaaagtga\"\n",
+    "    ce_sequence = \"ttgaaac\"\n",
+    "    output_file = \"output_results.csv\"\n",
+    "\n",
+    "    main(input_file, core_sequence, ce_sequence, output_file)\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "1eb3f912-131c-4d92-9309-3da8dcdfe804",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "4b46071e-11fc-4de4-aef1-aef42c13af49",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.11.5"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
